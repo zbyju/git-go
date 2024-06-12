@@ -12,6 +12,7 @@ func main() {
 	rootCmd := &cobra.Command{Use: "myapp"}
 	rootCmd.AddCommand(commands.InitCmd)
 	rootCmd.AddCommand(commands.CatFileCmd)
+	rootCmd.AddCommand(commands.HashObjectCmd)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
