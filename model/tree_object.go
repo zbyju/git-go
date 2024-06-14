@@ -14,7 +14,7 @@ type TreeObject struct {
 }
 
 type TreeObjectEntry struct {
-	Mode string
+	Mode uint32
 	Name string
 	Hash [20]byte
 }
@@ -46,7 +46,7 @@ func (t *TreeObject) ToString(namesOnly bool) string {
 		}
 	} else {
 		for _, e := range t.entries {
-			res += fmt.Sprintf("%s %s %s\n", e.Mode, e.Name, e.Hash)
+			res += fmt.Sprintf("%d %s %s\n", e.Mode, e.Name, e.Hash)
 		}
 	}
 	return res
@@ -55,7 +55,7 @@ func (t *TreeObject) ToString(namesOnly bool) string {
 func (t *TreeObject) Content() string {
 	content := ""
 	for _, entry := range t.entries {
-		content += fmt.Sprintf("%s %s\x00%s", entry.Mode, entry.Name, entry.Hash)
+		content += fmt.Sprintf("%d %s\x00%s", entry.Mode, entry.Name, entry.Hash)
 	}
 	return content
 }
@@ -123,7 +123,7 @@ func ParseTreeObject(data []byte) (*TreeObject, error) {
 
 		// Create the TreeObjectEntry
 		entry := TreeObjectEntry{
-			Mode: fmt.Sprintf("%06d", mode64),
+			Mode: uint32(mode64),
 			Name: name,
 			Hash: hash,
 		}

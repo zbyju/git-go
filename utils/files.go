@@ -6,17 +6,25 @@ import (
 
 type FileInfo struct {
 	Name    string
-	Mode    string
+	Mode    uint32
 	Content string
 }
+
+type DirInfo struct {
+	Name string
+	Mode uint32
+}
+
+var FILE_MODE uint32 = 100644
+var DIR_MODE uint32 = 40000
 
 func FileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	return !os.IsNotExist(err)
 }
 
-func ListDirectories(dirPath string) ([]string, error) {
-	var directories []string
+func ListDirectories(dirPath string) ([]DirInfo, error) {
+	var directories []DirInfo
 
 	// Open the directory
 	f, err := os.Open(dirPath)
@@ -36,7 +44,7 @@ func ListDirectories(dirPath string) ([]string, error) {
 			if entry.Name() == ".git" {
 				continue
 			}
-			directories = append(directories, entry.Name())
+			directories = append(directories, DirInfo{Name: entry.Name(), Mode: DIR_MODE})
 		}
 	}
 
@@ -69,7 +77,7 @@ func ListFiles(dirPath string) ([]FileInfo, error) {
 
 			files = append(files, FileInfo{
 				Name:    entry.Name(),
-				Mode:    "100644",
+				Mode:    FILE_MODE,
 				Content: string(content),
 			})
 		}

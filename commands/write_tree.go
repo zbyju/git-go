@@ -56,11 +56,11 @@ func createTreeObject(path string) (*model.TreeObject, error) {
 		return nil, err
 	}
 	for _, dir := range dirs {
-		tree, err := createTreeObject(filepath.Join(path, dir))
+		tree, err := createTreeObject(filepath.Join(path, dir.Name))
 		if err != nil {
 			return nil, err
 		}
-		entry := model.TreeObjectEntry{Mode: "40000", Name: dir, Hash: tree.Git.Hash()}
+		entry := model.TreeObjectEntry{Mode: dir.Mode, Name: dir.Name, Hash: tree.Git.Hash()}
 
 		treeObject.AddEntry(entry)
 	}
