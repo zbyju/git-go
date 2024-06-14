@@ -2,19 +2,19 @@ package model
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 )
 
 type TreeObject struct {
-	Size    int
 	entries []TreeObjectEntry
+	Git     GitObject
 }
 
 type TreeObjectEntry struct {
-	Mode uint32
+	Mode string
 	Name string
 	Hash [20]byte
 }
@@ -34,7 +34,8 @@ func (t *TreeObject) AddEntry(entry TreeObjectEntry) {
 	t.entries = append(t.entries, TreeObjectEntry{})
 	copy(t.entries[index+1:], t.entries[index:])
 	t.entries[index] = entry
-	t.Size++
+
+	t.Git.hash = sha1.Sum([]byte(t.FullContent()))
 }
 
 func (t *TreeObject) ToString(namesOnly bool) string {
@@ -45,10 +46,32 @@ func (t *TreeObject) ToString(namesOnly bool) string {
 		}
 	} else {
 		for _, e := range t.entries {
-			res += fmt.Sprintf("%d %s %s\n", e.Mode, e.Name, e.Hash)
+			res += fmt.Sprintf("%s %s %s\n", e.Mode, e.Name, e.Hash)
 		}
 	}
 	return res
+}
+
+func (t *TreeObject) Content() string {
+	content := ""
+	for _, entry := range t.entries {
+		content += fmt.Sprintf("%s %s\x00%s", entry.Mode, entry.Name, entry.Hash)
+	}
+	return content
+}
+
+func (t *TreeObject) FullContent() string {
+	content := t.Content()
+	header := fmt.Sprintf("tree %d\x00", len(content))
+	return header + content
+}
+
+func (t *TreeObject) Compress() []byte {
+	return t.Git.compress(t.FullContent())
+}
+
+func (t *TreeObject) Write() error {
+	return t.Git.write(t.FullContent())
 }
 
 func ParseTreeObject(data []byte) (*TreeObject, error) {
@@ -58,22 +81,8 @@ func ParseTreeObject(data []byte) (*TreeObject, error) {
 		return nil, fmt.Errorf("invalid input format: no null terminator found for size")
 	}
 
-	// Extract and parse the size part
-	sizePart := string(data[:nullIdx])
-	if !strings.HasPrefix(sizePart, "tree ") {
-		return nil, fmt.Errorf("invalid tree object format")
-	}
-
-	sizeStr := strings.TrimPrefix(sizePart, "tree ")
-	size, err := strconv.Atoi(sizeStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid size: %v", err)
-	}
-
 	// Initialize the TreeObject
-	tree := &TreeObject{
-		Size: size,
-	}
+	tree := &TreeObject{}
 
 	// Process the remaining data to extract entries
 	remainingData := data[nullIdx+1:]
@@ -99,7 +108,7 @@ func ParseTreeObject(data []byte) (*TreeObject, error) {
 		name := string(modeNamePart[lastSpaceIdx+1:])
 
 		// Parse the mode
-		mode, err := strconv.ParseUint(modeStr, 10, 32)
+		mode64, err := strconv.ParseUint(modeStr, 10, 32)
 		if err != nil {
 			return nil, fmt.Errorf("invalid mode: %v", err)
 		}
@@ -114,7 +123,7 @@ func ParseTreeObject(data []byte) (*TreeObject, error) {
 
 		// Create the TreeObjectEntry
 		entry := TreeObjectEntry{
-			Mode: uint32(mode),
+			Mode: fmt.Sprintf("%06d", mode64),
 			Name: name,
 			Hash: hash,
 		}

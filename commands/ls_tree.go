@@ -36,10 +36,7 @@ func init() {
 }
 
 func runLsTreeCommand(name string, nameOnly bool) error {
-	path, err := utils.NameToPath(name)
-	if err != nil {
-		return err
-	}
+	path := utils.PathToObjects(utils.NameToPath(name))
 
 	file, err := os.Open(path)
 	if err != nil {

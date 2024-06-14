@@ -1,15 +1,11 @@
 package commands
 
 import (
-	"bytes"
-	"compress/zlib"
-	"crypto/sha1"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
-	"github.com/codecrafters-io/git-starter-go/utils"
+	"github.com/codecrafters-io/git-starter-go/model"
 	"github.com/spf13/cobra"
 )
 
@@ -42,32 +38,14 @@ func runHashObjectCommand(path string) error {
 		return err
 	}
 
-	toHash := fmt.Sprintf("blob %d\x00%s", len(content), content)
-	sha := (sha1.Sum([]byte(toHash)))
-	hashed := fmt.Sprintf("%x", sha)
+	blobObject := model.NewBlobObject(string(content))
 
-	hashPath, err := utils.NameToPath(hashed)
+	err = (*blobObject).Write()
 	if err != nil {
 		return err
 	}
 
-	var in bytes.Buffer
-	b := []byte(toHash)
-	w := zlib.NewWriter(&in)
-	w.Write(b)
-	w.Close()
-
-	err = os.MkdirAll(filepath.Dir(hashPath), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(hashPath, in.Bytes(), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("%s", hashed)
+	fmt.Printf("%s", blobObject.Git.HashS())
 
 	return nil
 }

@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"compress/zlib"
 	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
 
+	"github.com/codecrafters-io/git-starter-go/model"
 	"github.com/codecrafters-io/git-starter-go/utils"
 	"github.com/spf13/cobra"
 )
@@ -36,10 +34,7 @@ func init() {
 }
 
 func runCatFileCommand(name string) error {
-	path, err := utils.NameToPath(name)
-	if err != nil {
-		return err
-	}
+	path := utils.PathToObjects(utils.NameToPath(name))
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -47,22 +42,12 @@ func runCatFileCommand(name string) error {
 	}
 	defer file.Close()
 
-	reader, err := zlib.NewReader(file)
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-
-	p, err := io.ReadAll(reader)
+	blobObject, err := model.NewBlobObjectFromFile(file)
 	if err != nil {
 		return err
 	}
 
-	str := string(p)
-	headerIndex := strings.IndexByte(str, 0)
-	content := str[headerIndex+1:]
-
-	fmt.Printf("%s", content)
+	fmt.Printf("%s", blobObject.Content())
 
 	return nil
 }

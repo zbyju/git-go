@@ -14,6 +14,7 @@ func main() {
 	rootCmd.AddCommand(commands.CatFileCmd)
 	rootCmd.AddCommand(commands.HashObjectCmd)
 	rootCmd.AddCommand(commands.LsTreeCmd)
+	rootCmd.AddCommand(commands.WriteTreeCmd)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
